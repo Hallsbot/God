@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Banners | RAOSTAR Admin</title>
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <style>
+        .banner-card-item {
+            background: var(--admin-card);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .banner-preview-img {
+            width: 120px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .upload-area {
+            border: 2px dashed var(--border);
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .upload-area:hover { border-color: var(--admin-primary); background: rgba(59, 130, 246, 0.05); }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <h1>Banners Management</h1>
+        <a href="admin-dashboard.html" class="btn btn-secondary">← Back</a>
+    </header>
+
+    <div class="container">
+        <!-- Banner Upload Form -->
+        <div class="card">
+            <h2 style="margin-bottom: 15px;">Add New Banner</h2>
+            <form id="banner-form" class="admin-form">
+                <div class="input-group">
+                    <label>Banner Image (Select File)</label>
+                    <div class="upload-area" onclick="document.getElementById('banner-file').click()">
+                        <span id="file-name">Click to select image</span>
+                        <input type="file" id="banner-file" accept="image/*" style="display: none;" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Redirect Link (Optional)</label>
+                    <input type="url" id="banner-link" placeholder="https://example.com (Leave blank if not needed)">
+                </div>
+
+                <div class="input-group">
+                    <label>Display Order (0 = First)</label>
+                    <input type="number" id="banner-order" value="1" min="0" required>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn-admin btn-edit" style="width: 100%; height: 50px;">
+                    Upload & Save Banner
+                </button>
+            </form>
+        </div>
+
+        <!-- Existing Banners List -->
+        <h2 style="margin: 25px 0 15px 0;">Live Banners</h2>
+        <div id="banners-list">
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { db } from '../js/firebase-config.js';
+        import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { showToast, uploadImageToImgBB } from '../js/utils.js';
+
+        const form = document.getElementById('banner-form');
+        const list = document.getElementById('banners-list');
+        const fileInput = document.getElementById('banner-file');
+        const fileName = document.getElementById('file-name');
+
+        // File name preview
+        fileInput.onchange = (e) => {
+            if(e.target.files.length > 0) fileName.innerText = e.target.files[0].name;
+        };
+
+        // Load Banners
+        async function loadBanners() {
+            list.innerHTML = '<div class="loader"></div>';
+            try {
+                const q = query(collection(db, "banners"), orderBy("order", "asc"));
+                const snap = await getDocs(q);
+                list.innerHTML = '';
+
+                if (snap.empty) {
+                    list.innerHTML = '<p style="text-align:center; color:gray;">No additional banners added.</p>';
+                }
+
+                snap.forEach(docSnap => {
+                    const b = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = 'banner-card-item';
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <img src="${b.imageUrl}" class="banner-preview-img" onerror="this.src='../permanent-banner.jpg'">
+                            <div>
+                                <small style="color:var(--text-dim);">Order: ${b.order}</small><br>
+                                <span style="font-size:0.8rem; color:var(--admin-primary);">${b.isPermanent ? 'Fixed System Banner' : 'Custom Banner'}</span>
+                            </div>
+                        </div>
+                        <div>
+                            ${b.isPermanent ? '' : `<button class="btn-admin btn-reject" onclick="deleteBanner('${docSnap.id}')">Delete</button>`}
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = '<p>Error loading banners.</p>';
+            }
+        }
+
+        // Handle Form Submit
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const file = fileInput.files[0];
+            const btn = document.getElementById('submit-btn');
+            
+            if(!file) return showToast("Please select an image", "error");
+
+            btn.innerText = "Uploading to Cloud...";
+            btn.disabled = true;
+
+            try {
+                // 1. Upload to ImgBB
+                const hostedUrl = await uploadImageToImgBB(file);
+
+                // 2. Save to Firestore
+                await addDoc(collection(db, "banners"), {
+                    imageUrl: hostedUrl,
+                    link: document.getElementById('banner-link').value || "",
+                    order: Number(document.getElementById('banner-order').value),
+                    enabled: true,
+                    isPermanent: false,
+                    createdAt: serverTimestamp()
+                });
+
+                showToast("Banner added successfully!", "success");
+                form.reset();
+                fileName.innerText = "Click to select image";
+                loadBanners();
+            } catch (error) {
+                console.error(error);
+                showToast("Upload failed: " + error.message, "error");
+            } finally {
+                btn.innerText = "Upload & Save Banner";
+                btn.disabled = false;
+            }
+        };
+
+        // Delete Banner
+        window.deleteBanner = async (id) => {
+            if(confirm("Are you sure you want to remove this banner?")) {
+                try {
+                    await deleteDoc(doc(db, "banners", id));
+                    showToast("Banner deleted", "success");
+                    loadBanners();
+                } catch (e) { showToast("Error deleting", "error"); }
+            }
+        };
+
+        loadBanners();
+    </script>
+</body>
+</html>
