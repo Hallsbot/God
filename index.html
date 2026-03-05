@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RAOSTAR SHOP</title>
+    
+    <!-- PWA & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #0f172a;
+            margin: 0;
+        }
+        .splash-container {
+            text-align: center;
+            animation: fadeIn 0.8s ease-in;
+        }
+        .splash-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(220, 38, 38, 0.4);
+        }
+        .app-name {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #DC2626;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="splash-container">
+        <img src="logo.png" alt="RAOSTAR" class="splash-logo" onerror="this.src='https://placehold.co/120x120?text=RAOSTAR'">
+        <div class="app-name">RAOSTAR</div>
+        <div class="loader"></div>
+        <p style="color: #94a3b8; margin-top: 15px; font-size: 0.8rem;">Redirecting...</p>
+    </div>
+
+    <!-- Scripts Logic -->
+    <script type="module">
+        import { runAutoSetup } from './js/auto-setup.js';
+        
+        // 1. Run Auto Setup once
+        runAutoSetup();
+
+        // 2. Fail-safe: If nothing happens in 4 seconds, force go to Auth
+        setTimeout(() => {
+            if (window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/')) {
+                console.log("Redirecting via timeout...");
+                window.location.href = 'auth.html';
+            }
+        }, 4000);
+    </script>
+
+    <!-- Global Auth Observer -->
+    <script type="module" src="js/auth.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RAOSTAR SHOP | Login</title>
+    
+    <!-- Icons & PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#111827">
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+    <div class="auth-container">
+        
+        <!-- Logo Area -->
+        <div class="auth-header">
+            <img src="logo.png" alt="Logo" class="auth-logo" onerror="this.src='https://placehold.co/100x100?text=LOGO'">
+            <h2>Welcome Back</h2>
+            <p>Sign in to continue to Raostar Shop</p>
+        </div>
+
+        <!-- 1. LOGIN FORM -->
+        <div id="login-box" class="auth-box">
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-pass" placeholder="Enter password" required>
+                </div>
+
+                <!-- Note: No Forgot Password as per requirements -->
+
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="#" onclick="toggleAuth()">Create Account</a></p>
+            </div>
+        </div>
+
+        <!-- 2. REGISTER FORM (Hidden by default) -->
+        <div id="register-box" class="auth-box hidden">
+            <form id="register-form">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="reg-name" placeholder="Your Name" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="reg-email" placeholder="valid@email.com" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-pass" placeholder="Min 6 characters" required>
+                    <small id="password-strength" style="float: right; font-weight: bold;"></small>
+                </div>
+
+                <div class="input-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="reg-confirm-pass" placeholder="Repeat password" required>
+                </div>
+
+                <div class="input-group checkbox-group">
+                    <input type="checkbox" id="reg-terms" required style="width: auto; margin-bottom: 0;">
+                    <label for="reg-terms" style="font-size: 0.85rem; display: inline;">
+                        I accept the <a href="terms.html" target="_blank" style="color: var(--primary-blue);">Terms & Conditions</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create Account</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a href="#" onclick="toggleAuth()">Login Here</a></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toggle Script (UI Only) -->
+    <script>
+        function toggleAuth() {
+            const loginBox = document.getElementById('login-box');
+            const regBox = document.getElementById('register-box');
+            const title = document.querySelector('.auth-header h2');
+            const subtitle = document.querySelector('.auth-header p');
+
+            if (loginBox.classList.contains('hidden')) {
+                // Show Login
+                loginBox.classList.remove('hidden');
+                regBox.classList.add('hidden');
+                title.innerText = "Welcome Back";
+                subtitle.innerText = "Sign in to continue to Raostar Shop";
+            } else {
+                // Show Register
+                loginBox.classList.add('hidden');
+                regBox.classList.remove('hidden');
+                title.innerText = "Create Account";
+                subtitle.innerText = "Join us to get premium packs";
+            }
+        }
+    </script>
+
+    <!-- Firebase Auth Logic -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/auth.js"></script>
+
+</body>
+</html>

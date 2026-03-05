@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RAOSTAR SHOP | Home</title>
+    
+    <!-- PWA & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#111827">
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        /* Home Specific Styles */
+        .header {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--bg-dark);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #374151;
+        }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--primary-red);
+        }
+        .header-logo img { width: 35px; height: 35px; border-radius: 8px; }
+        
+        /* Banner Styles */
+        .banner-container {
+            width: 92%;
+            margin: 15px auto;
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .swiper-slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+            display: block !important;
+        }
+        .swiper-slide.active { opacity: 1; z-index: 1; }
+        .banner-img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Product Styles */
+        .section-title {
+            padding: 0 15px;
+            margin: 20px 0 15px 15px;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            border-left: 4px solid var(--primary-red);
+            font-weight: 700;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 0 15px;
+        }
+
+        .product-card {
+            background: var(--card-dark);
+            border: 1px solid #374151;
+            padding: 15px;
+            border-radius: 16px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .product-card:active { transform: scale(0.97); }
+
+        .badge-hot {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: linear-gradient(45deg, #FF416C, #FF4B2B);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(255, 75, 43, 0.3);
+            z-index: 10;
+        }
+        .product-card h3 { font-size: 1rem; margin-bottom: 5px; color: white; }
+        .glory-text { color: var(--primary-blue-light); font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; }
+        .features { font-size: 0.7rem; color: #9CA3AF; margin-bottom: 15px; }
+        .features span { display: block; margin-bottom: 2px; }
+        
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #374151;
+        }
+        .price { font-size: 1.1rem; font-weight: 800; color: white; }
+        .buy-btn { padding: 8px 16px; width: auto; font-size: 0.85rem; border-radius: 8px; font-weight: 700; }
+
+        /* Purchase Modal Specific Styles */
+        #purchase-modal .modal-content {
+            text-align: left;
+            max-width: 350px;
+        }
+        #purchase-modal h3 { margin-bottom: 5px; font-size: 1.2rem; color: white; text-align: center; }
+        #purchase-modal label { display: block; font-size: 0.8rem; color: #94a3b8; margin: 10px 0 5px 0; }
+        #purchase-modal select, #purchase-modal input {
+            margin-bottom: 10px;
+            background: #111827;
+            border: 1px solid #374151;
+        }
+
+        .main-content { padding-bottom: 90px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-logo">
+            <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+            RAOSTAR SHOP
+        </div>
+    </header>
+
+    <div class="main-content">
+        <!-- Banners -->
+        <div id="banner-wrapper" class="banner-container">
+            <div class="loader" style="margin-top: 75px;"></div>
+        </div>
+
+        <!-- Products -->
+        <h2 class="section-title">Available Glory Packs</h2>
+        <div id="product-grid" class="product-grid">
+            <div class="loader" style="grid-column: 1/-1;"></div>
+        </div>
+    </div>
+
+    <!-- PURCHASE DETAILS MODAL (NEW) -->
+    <div id="purchase-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-plan-name">Confirm Order</h3>
+            <p style="font-size: 0.75rem; color: #64748b; margin-bottom: 15px; text-align: center;">Enter your Game Details to continue</p>
+            
+            <form id="purchase-details-form">
+                <label>Select Your Server</label>
+                <select id="user-server" required>
+                    <option value="" disabled selected>-- Select Server --</option>
+                    <!-- Servers will load dynamically from JS -->
+                </select>
+
+                <label>Guild ID (Game ID)</label>
+                <input type="text" id="user-guild-id" placeholder="Enter Guild ID" required>
+
+                <div style="background: rgba(220, 38, 38, 0.1); padding: 10px; border-radius: 8px; margin: 15px 0;">
+                    <p style="font-size: 0.75rem; color: var(--primary-red-light); text-align: center;">
+                        Money will be deducted after confirmation.
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" id="close-purchase-modal" class="btn" style="background: #374151; flex: 1;">Cancel</button>
+                    <button type="submit" id="confirm-purchase-btn" class="btn btn-primary" style="flex: 2;">Confirm & Buy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item active">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M128 96C92.7 96 64 124.7 64 160L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 256C576 220.7 547.3 192 512 192L136 192C122.7 192 112 181.3 112 168C112 154.7 122.7 144 136 144L520 144C533.3 144 544 133.3 544 120C544 106.7 533.3 96 520 96L128 96zM480 320C497.7 320 512 334.3 512 352C512 369.7 497.7 384 480 384C462.3 384 448 369.7 448 352C448 334.3 462.3 320 480 320z"/></svg>
+            <span class="nav-label">Wallet</span>
+        </a>
+        <a href="about.html" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span class="nav-label">About</span>
+        </a>
+    </nav>
+
+    <!-- Logic Scripts -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/app.js"></script>
+
+</body>
+</html>

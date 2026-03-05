@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions | RAOSTAR</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .content-body { padding: 25px; line-height: 1.8; color: #94a3b8; padding-bottom: 100px; }
+        .content-body h2 { color: white; margin: 25px 0 12px; font-size: 1.3rem; border-left: 4px solid var(--primary-red); padding-left: 10px; }
+        .content-body p { margin-bottom: 15px; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-logo">Terms & Conditions</div>
+        <a href="about.html" style="color: var(--primary-blue); font-weight: bold;">← Back</a>
+    </div>
+
+    <div id="legal-content" class="content-body">
+        <div class="loader"></div>
+        <p style="text-align:center;">Connecting to database...</p>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item">
+            <svg viewBox="0 0 576 512"><path d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg>
+            <span>Home</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <svg viewBox="0 0 640 640"><path d="M128 96C92.7 96 64 124.7 64 160L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 256C576 220.7 547.3 192 512 192L136 192C122.7 192 112 181.3 112 168C112 154.7 122.7 144 136 144L520 144C533.3 144 544 133.3 544 120C544 106.7 533.3 96 520 96L128 96zM480 320C497.7 320 512 334.3 512 352C512 369.7 497.7 384 480 384C462.3 384 448 369.7 448 352C448 334.3 462.3 320 480 320z"/></svg>
+            <span>Wallet</span>
+        </a>
+        <a href="about.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>About</span>
+        </a>
+    </nav>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const container = document.getElementById('legal-content');
+
+        async function loadData() {
+            try {
+                // 'pages' कलेक्शन से 'terms' डॉक्यूमेंट लाएं
+                const docRef = doc(db, "pages", "terms");
+                const snap = await getDoc(docRef);
+
+                if (snap.exists()) {
+                    container.innerHTML = snap.data().content;
+                } else {
+                    container.innerHTML = `
+                        <h2>Not Found</h2>
+                        <p>Terms have not been initialized yet. Please visit the admin panel or restart the app setup.</p>
+                    `;
+                }
+            } catch (error) {
+                console.error("Legal Error:", error);
+                container.innerHTML = `
+                    <div style="text-align:center; color:#ef4444;">
+                        <h3>Error Loading Content</h3>
+                        <p style="font-size:0.8rem; color:#94a3b8;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        loadData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RAOSTAR SHOP | Wallet</title>
+    
+    <!-- PWA & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#111827">
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <style>
+        /* Wallet Specific Styles */
+        .balance-card {
+            background: linear-gradient(135deg, var(--card-dark) 0%, #111827 100%);
+            padding: 30px 20px;
+            text-align: center;
+            margin: 20px 15px;
+            border-radius: 20px;
+            border: 1px solid #374151;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -50px; left: -50px;
+            width: 100px; height: 100px;
+            background: var(--primary-blue);
+            opacity: 0.1;
+            border-radius: 50%;
+            filter: blur(40px);
+        }
+        .balance-label { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px; }
+        .balance-amount { font-size: 3rem; font-weight: 800; color: white; margin-bottom: 20px; letter-spacing: -1px; }
+        
+        .transaction-list {
+            padding: 0 15px;
+            padding-bottom: 80px;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            margin-bottom: 15px;
+        }
+        .section-header h3 { color: var(--text-primary); }
+        
+        .transaction-item {
+            padding: 12px 15px;
+            border-left: 4px solid transparent;
+        }
+        /* Status Colors */
+        .text-green { color: var(--success); }
+        .text-red { color: var(--primary-red-light); }
+        
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .status-badge.pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .status-badge.approved { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .status-badge.rejected { background: rgba(239, 68, 68, 0.2); color: var(--primary-red-light); }
+
+        /* Modal Styles */
+        .qr-img {
+            width: 200px;
+            height: 200px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 2px solid white;
+            margin-bottom: 15px;
+            background: white;
+        }
+        .modal-note {
+            font-size: 0.8rem;
+            color: #ccc;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align: center; padding: 15px; border-bottom: 1px solid #374151;">My Wallet</h2>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+        <div class="balance-label">Available Balance</div>
+        <div id="wallet-balance" class="balance-amount">₹0</div>
+        
+        <button id="add-money-btn" class="btn btn-primary" style="border-radius: 50px; padding: 12px 30px; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);">
+            + Add Money
+        </button>
+    </div>
+
+    <!-- History Header -->
+    <div class="section-header">
+        <h3>Transactions</h3>
+        <span style="font-size: 0.8rem; color: #6B7280;">Recent activity</span>
+    </div>
+
+    <!-- History List -->
+    <div id="transaction-history" class="transaction-list">
+        <div class="loader"></div>
+    </div>
+
+    <!-- ADD MONEY MODAL -->
+    <div id="add-money-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Add Money via QR</h3>
+            
+            <!-- QR Code -->
+            <img src="qr.jpg" id="qr-display" class="qr-img" alt="Payment QR">
+            
+            <p class="modal-note">
+                1. Scan QR & Pay via UPI<br>
+                2. Take a Screenshot<br>
+                3. Upload Proof below
+            </p>
+
+            <!-- Input Fields -->
+            <input type="number" id="amount-input" placeholder="Enter Amount (e.g. 100)" min="1">
+            
+            <div style="text-align: left; margin-bottom: 5px; font-size: 0.9rem; color:#aaa;">Upload Proof:</div>
+            <input type="file" id="payment-proof" accept="image/*" style="padding: 8px;">
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="close-modal" class="btn" style="background: #374151; flex: 1;">Cancel</button>
+                <button id="submit-add-money" class="btn btn-blue" style="flex: 1;">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <!-- Home -->
+        <a href="home.html" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg>
+            <span class="nav-label">Home</span>
+        </a>
+        
+        <!-- Wallet (Active) -->
+        <a href="wallet.html" class="nav-item active">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M128 96C92.7 96 64 124.7 64 160L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 256C576 220.7 547.3 192 512 192L136 192C122.7 192 112 181.3 112 168C112 154.7 122.7 144 136 144L520 144C533.3 144 544 133.3 544 120C544 106.7 533.3 96 520 96L128 96zM480 320C497.7 320 512 334.3 512 352C512 369.7 497.7 384 480 384C462.3 384 448 369.7 448 352C448 334.3 462.3 320 480 320z"/></svg>
+            <span class="nav-label">Wallet</span>
+        </a>
+
+        <!-- About -->
+        <a href="about.html" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span class="nav-label">About</span>
+        </a>
+    </nav>
+
+    <!-- Logic Scripts -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
