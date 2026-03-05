@@ -1,0 +1,316 @@
+/* --- RAOSTAR SHOP - PREMIUM DESIGN SYSTEM --- */
+
+:root {
+    --primary-red: #DC2626;
+    --primary-red-light: #EF4444;
+    --primary-blue: #3B82F6;
+    --primary-blue-light: #60A5FA;
+    --bg-dark: #0f172a;        /* Navy Black */
+    --card-dark: #1e293b;      /* Slate Gray */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --border: rgba(255, 255, 255, 0.08);
+}
+
+/* 1. Global Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding-bottom: 80px; /* Space for Bottom Nav */
+    overflow-x: hidden;
+}
+
+a { text-decoration: none; color: inherit; }
+button { border: none; outline: none; cursor: pointer; }
+
+/* 2. Header Style */
+.header {
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 12px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--primary-red);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.header-logo img {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+}
+
+/* 3. Banner Slider (Fixing your Issue) */
+.banner-container {
+    width: 92%;
+    height: 180px;
+    margin: 15px auto;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    background: var(--card-dark);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.swiper-slide {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
+    display: block !important;
+}
+
+.swiper-slide.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+.banner-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 4. Product Grid & Cards */
+.section-title {
+    padding: 0 20px;
+    margin: 20px 0 10px 0;
+    font-size: 1.1rem;
+    color: white;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.section-title::before {
+    content: '';
+    width: 4px;
+    height: 18px;
+    background: var(--primary-red);
+    margin-right: 10px;
+    border-radius: 10px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 0 15px;
+}
+
+.product-card {
+    background: var(--card-dark);
+    border-radius: 16px;
+    padding: 15px;
+    position: relative;
+    border: 1px solid var(--border);
+    transition: transform 0.2s;
+}
+
+.product-card:active { transform: scale(0.97); }
+
+.badge-hot {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(45deg, #FF416C, #FF4B2B);
+    color: white;
+    font-size: 0.65rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(255, 75, 43, 0.3);
+}
+
+.product-card h3 { font-size: 1rem; margin-bottom: 5px; }
+.glory-text { color: var(--primary-blue-light); font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; }
+.features { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 15px; }
+.features span { display: block; margin-bottom: 2px; }
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+
+.price { font-size: 1.1rem; font-weight: 800; color: white; }
+
+/* 5. Buttons */
+.btn {
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-weight: 700;
+    transition: 0.3s;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.btn-primary { background: var(--primary-red); color: white; }
+.btn-blue { background: var(--primary-blue); color: white; }
+
+/* 6. Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    z-index: 1000;
+    padding-bottom: 10px;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-secondary);
+    transition: 0.3s;
+}
+
+.nav-item svg { width: 24px; height: 24px; fill: currentColor; margin-bottom: 4px; }
+.nav-item span { font-size: 0.7rem; font-weight: 500; }
+.nav-item.active { color: var(--primary-blue); }
+
+/* 7. Wallet UI */
+.balance-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    margin: 20px 15px;
+    padding: 30px 20px;
+    border-radius: 20px;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.balance-amount { font-size: 2.8rem; font-weight: 900; margin: 10px 0 20px 0; letter-spacing: -1px; }
+
+.transaction-item {
+    background: var(--card-dark);
+    margin: 10px 15px;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid var(--primary-blue);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-badge {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.status-badge.pending { background: #f59e0b33; color: var(--warning); }
+.status-badge.approved { background: #10b98133; color: var(--success); }
+
+/* 8. Forms & Modals */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+    display: none; align-items: center; justify-content: center; z-index: 2000;
+}
+
+.modal-content {
+    background: var(--card-dark);
+    width: 90%; max-width: 400px;
+    padding: 25px; border-radius: 20px;
+    border: 1px solid var(--border);
+    text-align: center;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+input, select {
+    width: 100%;
+    padding: 12px 15px;
+    background: #0f172a;
+    border: 1px solid var(--border);
+    color: white;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+/* 9. Admin Dashboard Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 20px;
+}
+
+.stat-card {
+    background: var(--card-dark);
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary-blue-light); }
+.stat-label { font-size: 0.75rem; color: var(--text-secondary); }
+
+/* 10. Helper Classes */
+.loader {
+    width: 30px; height: 30px; border: 3px solid var(--border);
+    border-top: 3px solid var(--primary-red);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.text-green { color: var(--success); }
+.text-red { color: var(--primary-red-light); }
+.menu-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-icon svg {
+    width: 100%;
+    height: 100%;
+}
