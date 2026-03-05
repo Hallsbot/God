@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products | RAOSTAR Admin</title>
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <style>
+        .product-item {
+            background: var(--admin-card);
+            padding: 18px;
+            border-radius: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+        }
+        .product-item:hover { border-color: var(--admin-primary); }
+        .p-info h3 { margin: 0; font-size: 1.1rem; }
+        .p-info p { margin: 5px 0 0; font-size: 0.85rem; color: var(--text-dim); }
+        .p-actions { display: flex; gap: 8px; }
+        
+        /* Badge Styles */
+        .status-pill {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-left: 5px;
+        }
+        .pill-hot { background: #ef4444; color: white; }
+        .pill-live { background: #10b981; color: white; }
+        .pill-off { background: #475569; color: white; }
+
+        .form-overlay {
+            background: var(--admin-card);
+            border: 1px solid var(--admin-primary);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            display: none; /* Hidden by default */
+            animation: slideDown 0.4s ease;
+        }
+        @keyframes slideDown { from {opacity: 0; transform: translateY(-20px);} to {opacity: 1; transform: translateY(0);} }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <h1>Glory Pack Manager</h1>
+        <a href="admin-dashboard.html" class="btn btn-secondary">← Back</a>
+    </header>
+
+    <div class="container">
+        
+        <!-- Add/Edit Product Form -->
+        <button id="add-btn-toggle" class="btn-admin btn-edit" style="width: 100%; height: 50px; margin-bottom: 20px;">
+            + Create New Pack
+        </button>
+
+        <div id="product-form-box" class="form-overlay">
+            <h2 id="form-title" style="margin-bottom: 20px;">Add New Glory Pack</h2>
+            <form id="product-form" class="admin-form">
+                <input type="hidden" id="p-id"> <!-- Hidden ID for Editing -->
+
+                <div class="input-group">
+                    <label>Pack Title</label>
+                    <input type="text" id="p-title" placeholder="e.g., Starter Pack" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="input-group">
+                        <label>Glory Amount</label>
+                        <input type="text" id="p-glory" placeholder="e.g., 100k Glory" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Price (INR ₹)</label>
+                        <input type="number" id="p-price" placeholder="99" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Features (Comma separated)</label>
+                    <input type="text" id="p-features" placeholder="Instant Delivery, 24/7 Support, Safe">
+                </div>
+
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="p-hot" style="width: auto; margin: 0;"> Hot Badge?
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="p-enabled" checked style="width: auto; margin: 0;"> Show in Shop?
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" id="save-btn" class="btn-admin btn-edit" style="flex: 2; height: 45px;">Save Product</button>
+                    <button type="button" id="cancel-btn" class="btn-admin btn-reject" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Product List -->
+        <h2 style="margin-bottom: 15px;">Active Packs</h2>
+        <div id="product-list-container">
+            <div class="loader"></div>
+        </div>
+
+    </div>
+
+    <!-- Logic -->
+    <script type="module">
+        import { db } from '../js/firebase-config.js';
+        import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { showToast, formatCurrency } from '../js/utils.js';
+
+        const formBox = document.getElementById('product-form-box');
+        const form = document.getElementById('product-form');
+        const list = document.getElementById('product-list-container');
+        const addToggle = document.getElementById('add-btn-toggle');
+        const cancelBtn = document.getElementById('cancel-btn');
+
+        // Toggle Form
+        addToggle.onclick = () => {
+            resetForm();
+            formBox.style.display = 'block';
+            addToggle.style.display = 'none';
+        };
+
+        cancelBtn.onclick = () => {
+            resetForm();
+            formBox.style.display = 'none';
+            addToggle.style.display = 'block';
+        };
+
+        function resetForm() {
+            form.reset();
+            document.getElementById('p-id').value = "";
+            document.getElementById('form-title').innerText = "Add New Glory Pack";
+        }
+
+        // Load Products
+        async function loadProducts() {
+            list.innerHTML = '<div class="loader"></div>';
+            try {
+                const q = query(collection(db, "plans"), orderBy("price", "asc"));
+                const snap = await getDocs(q);
+                list.innerHTML = '';
+
+                if(snap.empty) {
+                    list.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">No products found in database.</p>';
+                    return;
+                }
+
+                snap.forEach(docSnap => {
+                    const p = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = 'product-item';
+                    item.innerHTML = `
+                        <div class="p-info">
+                            <h3>${p.title} 
+                                ${p.isHot ? '<span class="status-pill pill-hot">HOT</span>' : ''}
+                                ${p.enabled ? '<span class="status-pill pill-live">LIVE</span>' : '<span class="status-pill pill-off">OFF</span>'}
+                            </h3>
+                            <p>${p.glory} • <strong>${formatCurrency(p.price)}</strong></p>
+                        </div>
+                        <div class="p-actions">
+                            <button class="btn-admin btn-edit edit-trigger" data-id="${docSnap.id}">Edit</button>
+                            <button class="btn-admin btn-reject delete-trigger" data-id="${docSnap.id}">Del</button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+
+                // Attach Events to dynamic buttons
+                document.querySelectorAll('.edit-trigger').forEach(btn => {
+                    btn.onclick = (e) => handleEdit(e.target.dataset.id);
+                });
+                document.querySelectorAll('.delete-trigger').forEach(btn => {
+                    btn.onclick = (e) => handleDelete(e.target.dataset.id);
+                });
+
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = '<p>Error loading products. Check Firestore rules.</p>';
+            }
+        }
+
+        // Handle Edit Button Click (Fix)
+        async function handleEdit(id) {
+            try {
+                const docRef = doc(db, "plans", id);
+                const snap = await getDoc(docRef);
+
+                if (snap.exists()) {
+                    const p = snap.data();
+                    // Fill form fields
+                    document.getElementById('p-id').value = id;
+                    document.getElementById('p-title').value = p.title;
+                    document.getElementById('p-glory').value = p.glory;
+                    document.getElementById('p-price').value = p.price;
+                    document.getElementById('p-features').value = p.features ? p.features.join(', ') : '';
+                    document.getElementById('p-hot').checked = p.isHot || false;
+                    document.getElementById('p-enabled').checked = p.enabled || false;
+
+                    // Update UI
+                    document.getElementById('form-title').innerText = "Edit Pack: " + p.title;
+                    formBox.style.display = 'block';
+                    addToggle.style.display = 'none';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } catch (e) { showToast("Failed to fetch product data", "error"); }
+        }
+
+        // Handle Delete
+        async function handleDelete(id) {
+            if(confirm("Permanently delete this glory pack?")) {
+                try {
+                    await deleteDoc(doc(db, "plans", id));
+                    showToast("Product deleted", "success");
+                    loadProducts();
+                } catch (e) { showToast("Error deleting", "error"); }
+            }
+        }
+
+        // Form Submit (Add/Update)
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-btn');
+            const pId = document.getElementById('p-id').value;
+
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            const productData = {
+                title: document.getElementById('p-title').value,
+                glory: document.getElementById('p-glory').value,
+                price: Number(document.getElementById('p-price').value),
+                features: document.getElementById('p-features').value.split(',').map(f => f.trim()),
+                isHot: document.getElementById('p-hot').checked,
+                enabled: document.getElementById('p-enabled').checked,
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                if (pId) {
+                    // Update Existing
+                    await updateDoc(doc(db, "plans", pId), productData);
+                    showToast("Product updated successfully!", "success");
+                } else {
+                    // Create New
+                    productData.createdAt = serverTimestamp();
+                    await addDoc(collection(db, "plans"), productData);
+                    showToast("New product added to shop!", "success");
+                }
+                resetForm();
+                formBox.style.display = 'none';
+                addToggle.style.display = 'block';
+                loadProducts();
+            } catch (err) {
+                console.error(err);
+                showToast("Save failed", "error");
+            } finally {
+                btn.innerText = "Save Product";
+                btn.disabled = false;
+            }
+        };
+
+        // Initial Load
+        loadProducts();
+    </script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | RAOSTAR</title>
+    <link rel="icon" type="image/png" href="../logo.png">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1b2235;
+            --accent-purple: #8b5cf6;
+            --text-gray: #94a3b8;
+            --text-white: #f8fafc;
+            --btn-red: #ef4444;
+            --revenue-blue: #60a5fa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            padding: 20px;
+        }
+
+        /* Header */
+        .admin-header {
+            max-width: 1200px;
+            margin: 0 auto 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            font-size: 1.4rem;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .header-actions a { color: white; text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+        .btn-logout {
+            background: var(--btn-red);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Stats Grid - 4 Columns */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 30px 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .stat-icon { font-size: 1.8rem; margin-bottom: 15px; }
+        .stat-value { font-size: 2rem; font-weight: 800; margin-bottom: 8px; color: var(--revenue-blue); }
+        .stat-label { font-size: 0.75rem; color: var(--text-gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        /* Control Center - Now 6 Columns */
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 60px;
+        }
+
+        .control-item {
+            background: var(--card-bg);
+            padding: 25px 10px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-white);
+            transition: 0.2s;
+            border: 1px solid rgba(255,255,255,0.03);
+            position: relative; /* For badge positioning */
+        }
+
+        .control-item:hover { background: #252e48; transform: translateY(-3px); }
+        .control-item i { font-size: 1.5rem; display: block; margin-bottom: 12px; }
+        .control-item span { font-size: 0.85rem; font-weight: 500; color: #cbd5e1; }
+
+        /* Notification Badge on Grid Items */
+        .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--btn-red);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 7px;
+            border-radius: 50%;
+            font-weight: 800;
+            display: none; /* Hidden if zero */
+        }
+
+        /* RESPONSIVENESS */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .control-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .control-grid { grid-template-columns: 1fr 1fr; }
+            .admin-header h1 { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="admin-header">
+        <h1>RAOSTAR ADMIN</h1>
+        <div class="header-actions">
+            <a href="../home.html">View Shop</a>
+            <button id="admin-logout" class="btn-logout">Logout</button>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <!-- 1. Top Statistics Row -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div id="stat-users" class="stat-value">0</div>
+                <div class="stat-label">TOTAL USERS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div id="stat-pending" class="stat-value">0</div>
+                <div class="stat-label">PENDING PAYMENTS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div id="stat-revenue" class="stat-value">₹0</div>
+                <div class="stat-label">TOTAL REVENUE</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div id="stat-products" class="stat-value">0</div>
+                <div class="stat-label">ACTIVE PACKS</div>
+            </div>
+        </div>
+
+        <!-- 2. Control Center (6 Dedicated Buttons) -->
+        <h2 class="section-title">Control Center</h2>
+        <div class="control-grid">
+            <!-- Payments -->
+            <a href="admin-payments.html" class="control-item">
+                <div id="badge-payments" class="badge">0</div>
+                <i>💳</i>
+                <span>Payments</span>
+            </a>
+            <!-- NEW: Orders Section Added -->
+            <a href="admin-orders.html" class="control-item">
+                <div id="badge-orders" class="badge">0</div>
+                <i>🛒</i>
+                <span>Orders</span>
+            </a>
+            <!-- Products -->
+            <a href="admin-products.html" class="control-item">
+                <i>📦</i>
+                <span>Products</span>
+            </a>
+            <!-- Banners -->
+            <a href="admin-banners.html" class="control-item">
+                <i>🖼️</i>
+                <span>Banners</span>
+            </a>
+            <!-- Pages -->
+            <a href="admin-pages.html" class="control-item">
+                <i>📄</i>
+                <span>Pages</span>
+            </a>
+            <!-- Settings -->
+            <a href="admin-settings.html" class="control-item">
+                <i>⚙️</i>
+                <span>Settings</span>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Firebase Logic -->
+    <script type="module">
+        import { db, auth } from '../js/firebase-config.js';
+        import { collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { formatCurrency } from '../js/utils.js';
+
+        function initDashboard() {
+            // 1. Total Users Stats
+            onSnapshot(collection(db, "users"), snap => {
+                document.getElementById('stat-users').innerText = snap.size;
+            });
+
+            // 2. Pending Payments Stats & Badge
+            const payQ = query(collection(db, "transactions"), where("type", "==", "add_money"), where("status", "==", "pending"));
+            onSnapshot(payQ, snap => {
+                const count = snap.size;
+                document.getElementById('stat-pending').innerText = count;
+                const badge = document.getElementById('badge-payments');
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'block' : 'none';
+            });
+
+            // 3. Pending Orders Badge
+            const orderQ = query(collection(db, "transactions"), where("type", "==", "purchase"), where("status", "==", "pending"));
+            onSnapshot(orderQ, snap => {
+                const count = snap.size;
+                const badge = document.getElementById('badge-orders');
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'block' : 'none';
+            });
+
+            // 4. Active Products Stats
+            onSnapshot(collection(db, "plans"), snap => {
+                document.getElementById('stat-products').innerText = snap.size;
+            });
+
+            // 5. Total Revenue Calculation
+            const revQ = query(collection(db, "transactions"), where("type", "==", "add_money"), where("status", "==", "approved"));
+            onSnapshot(revQ, snap => {
+                let total = 0;
+                snap.forEach(doc => total += Number(doc.data().amount || 0));
+                document.getElementById('stat-revenue').innerText = formatCurrency(total);
+            });
+        }
+
+        // Logout
+        document.getElementById('admin-logout').onclick = async () => {
+            if(confirm("Logout from RAOSTAR Admin?")) {
+                await signOut(auth);
+                window.location.href = '../auth.html';
+            }
+        };
+
+        initDashboard();
+    </script>
+</body>
+</html>

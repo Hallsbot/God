@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Requests | RAOSTAR Admin</title>
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <style>
+        .payment-card {
+            background: var(--admin-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+
+        .payment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+        .user-info h3 { margin: 0; font-size: 1.1rem; color: white; }
+        .user-info p { margin: 3px 0 0; font-size: 0.8rem; color: var(--text-dim); }
+
+        .payment-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .amount-tag {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--admin-green);
+        }
+        .proof-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .proof-preview:hover { transform: scale(1.05); border-color: var(--admin-primary); }
+
+        .payment-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        /* Stats for Payments */
+        .pay-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .mini-stat {
+            background: rgba(59, 130, 246, 0.05);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <h1>Payment Approvals</h1>
+        <a href="admin-dashboard.html" class="btn btn-secondary">← Back</a>
+    </header>
+
+    <div class="container">
+        
+        <!-- Summary Stats -->
+        <div class="pay-stats">
+            <div class="mini-stat">
+                <span style="display:block; color:var(--text-dim); font-size:0.75rem; text-transform:uppercase;">Pending Tasks</span>
+                <span id="pending-count" style="font-size:1.5rem; font-weight:800; color:var(--warning);">0</span>
+            </div>
+            <div class="mini-stat">
+                <span style="display:block; color:var(--text-dim); font-size:0.75rem; text-transform:uppercase;">Approved Today</span>
+                <span id="approved-today" style="font-size:1.5rem; font-weight:800; color:var(--admin-green);">0</span>
+            </div>
+        </div>
+
+        <h2 style="margin-bottom: 15px;">Pending Requests</h2>
+        
+        <!-- Requests Container -->
+        <div id="payments-container">
+            <div class="loader"></div>
+            <p style="text-align: center; color: gray;">Checking for new payments...</p>
+        </div>
+
+    </div>
+
+    <!-- Logic -->
+    <script type="module">
+        import { db } from '../js/firebase-config.js';
+        import { 
+            collection, getDocs, query, where, doc, updateDoc, 
+            runTransaction, serverTimestamp, orderBy, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { showToast, formatCurrency, formatDate } from '../js/utils.js';
+
+        const container = document.getElementById('payments-container');
+        const pendingEl = document.getElementById('pending-count');
+
+        // Real-time Loading of Payments
+        function initPayments() {
+            // Query for pending add_money requests
+            // Important: This might require an index if orderBy is used.
+            // Using basic query first to avoid "Loading" getting stuck.
+            const q = query(
+                collection(db, "transactions"), 
+                where("type", "==", "add_money"), 
+                where("status", "==", "pending")
+            );
+
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = '';
+                pendingEl.innerText = snapshot.size;
+
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="card" style="text-align:center; padding:40px;">
+                            <div style="font-size:3rem; margin-bottom:10px;">✅</div>
+                            <p>No pending payment requests!</p>
+                        </div>`;
+                    return;
+                }
+
+                snapshot.forEach((docSnap) => {
+                    const t = docSnap.data();
+                    const card = document.createElement('div');
+                    card.className = 'payment-card';
+                    card.innerHTML = `
+                        <div class="payment-header">
+                            <div class="user-info">
+                                <h3>${t.userName || 'Unknown User'}</h3>
+                                <p>User ID: ${t.userId}</p>
+                                <p>${formatDate(t.createdAt)}</p>
+                            </div>
+                            <div class="amount-tag">${formatCurrency(t.amount)}</div>
+                        </div>
+                        <div class="payment-body">
+                            <div style="font-size:0.85rem; color:var(--text-dim);">
+                                Check the proof image before approving.<br>
+                                Amount will be added to user's wallet.
+                            </div>
+                            <img src="${t.proofUrl}" class="proof-preview" title="Click to enlarge" onclick="window.open('${t.proofUrl}', '_blank')">
+                        </div>
+                        <div class="payment-actions">
+                            <button class="btn-admin btn-edit approve-trigger" 
+                                data-id="${docSnap.id}" 
+                                data-uid="${t.userId}" 
+                                data-amount="${t.amount}">
+                                Approve & Add Money
+                            </button>
+                            <button class="btn-admin btn-reject reject-trigger" 
+                                data-id="${docSnap.id}">
+                                Reject Payment
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                // Attach Events
+                document.querySelectorAll('.approve-trigger').forEach(btn => {
+                    btn.onclick = (e) => handleApprove(e.target.dataset);
+                });
+                document.querySelectorAll('.reject-trigger').forEach(btn => {
+                    btn.onclick = (e) => handleReject(e.target.dataset.id);
+                });
+
+            }, (error) => {
+                console.error("Payment Listener Error:", error);
+                container.innerHTML = `<p style="color:red; text-align:center;">Failed to load. Check Firebase Index.</p>`;
+            });
+        }
+
+        // Handle Approve (Transaction Safe)
+        async function handleApprove(data) {
+            const { id, uid, amount } = data;
+            if(!confirm(`Add ₹${amount} to this user's wallet?`)) return;
+
+            showToast("Processing approval...", "info");
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const userRef = doc(db, "users", uid);
+                    const txRef = doc(db, "transactions", id);
+
+                    const userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists()) throw "User document not found!";
+
+                    // 1. Calculate new balance
+                    const currentBalance = Number(userSnap.data().walletBalance || 0);
+                    const addedAmount = Number(amount);
+                    const newBalance = currentBalance + addedAmount;
+
+                    // 2. Update Wallet
+                    transaction.update(userRef, { 
+                        walletBalance: newBalance,
+                        updatedAt: serverTimestamp() 
+                    });
+
+                    // 3. Update Transaction Status
+                    transaction.update(txRef, { 
+                        status: 'approved',
+                        processedAt: serverTimestamp()
+                    });
+                });
+
+                showToast("Payment approved and wallet updated!", "success");
+
+            } catch (error) {
+                console.error("Approval Error:", error);
+                showToast("Transaction failed: " + error, "error");
+            }
+        }
+
+        // Handle Reject
+        async function handleReject(id) {
+            const reason = prompt("Reason for rejection? (Optional)");
+            if (reason === null) return; // Cancelled
+
+            try {
+                const txRef = doc(db, "transactions", id);
+                await updateDoc(txRef, {
+                    status: 'rejected',
+                    rejectReason: reason || "Invalid proof",
+                    processedAt: serverTimestamp()
+                });
+                showToast("Payment rejected.", "success");
+            } catch (e) {
+                showToast("Action failed", "error");
+            }
+        }
+
+        // Load stats for approved today (Optional UI polish)
+        async function loadApprovedToday() {
+            // Logic to count today's approved can be added here
+        }
+
+        initPayments();
+    </script>
+</body>
+</html>

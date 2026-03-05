@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders | RAOSTAR Admin</title>
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <style>
+        .order-card {
+            background: var(--admin-card);
+            border: 1px solid var(--border);
+            border-left: 6px solid var(--admin-primary);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .plan-info h3 { margin: 0; color: white; font-size: 1.2rem; }
+        .plan-info p { margin: 5px 0; font-size: 0.85rem; color: var(--text-dim); }
+
+        .price-tag {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        /* 🎮 GAME DETAILS BOX */
+        .game-details-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .detail-item label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .detail-item span {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+
+        .user-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .btn-deliver {
+            width: 100%;
+            height: 45px;
+            background: var(--admin-green);
+            color: white;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-deliver:active { transform: scale(0.98); }
+
+        .no-orders {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 500px) {
+            .game-details-box { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <h1>Customer Orders</h1>
+        <a href="admin-dashboard.html" class="btn btn-secondary">← Back</a>
+    </header>
+
+    <div class="container">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="font-size: 1.1rem;">Orders to Deliver</h2>
+            <button onclick="location.reload()" style="background:none; border:none; color:var(--admin-primary); font-weight:bold; cursor:pointer;">Refresh 🔄</button>
+        </div>
+
+        <!-- Orders List Container -->
+        <div id="orders-container">
+            <div class="loader"></div>
+            <p style="text-align: center; color: gray; margin-top: 10px;">Loading pending orders...</p>
+        </div>
+
+    </div>
+
+    <!-- Logic Script -->
+    <script type="module">
+        import { db } from '../js/firebase-config.js';
+        import { 
+            collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { formatCurrency, formatDate, showToast } from '../js/utils.js';
+
+        const container = document.getElementById('orders-container');
+
+        // 1. Load Orders Real-time
+        function loadOrders() {
+            // Fetch only 'purchase' transactions that are 'pending'
+            const q = query(
+                collection(db, "transactions"), 
+                where("type", "==", "purchase"), 
+                where("status", "==", "pending")
+            );
+
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = '';
+
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="no-orders card">
+                            <div style="font-size: 4rem; margin-bottom: 15px;">📦</div>
+                            <h3>All Caught Up!</h3>
+                            <p>No new orders to deliver at the moment.</p>
+                        </div>`;
+                    return;
+                }
+
+                snapshot.forEach((docSnap) => {
+                    const o = docSnap.data();
+                    const card = document.createElement('div');
+                    card.className = 'order-card';
+                    card.innerHTML = `
+                        <div class="order-header">
+                            <div class="plan-info">
+                                <h3>${o.planTitle}</h3>
+                                <p>Customer: <b>${o.userName}</b></p>
+                            </div>
+                            <div class="price-tag">${formatCurrency(o.amount)}</div>
+                        </div>
+
+                        <div class="game-details-box">
+                            <div class="detail-item">
+                                <label>Target Server</label>
+                                <span style="color: #60a5fa;">🌍 ${o.serverId || 'Global'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Guild ID / Game ID</label>
+                                <span style="color: #fbbf24;">🆔 ${o.guildId || 'N/A'}</span>
+                            </div>
+                        </div>
+
+                        <div class="user-meta">
+                            <span>📧 ${o.userEmail || 'No Email'}</span>
+                            <span>•</span>
+                            <span>📅 ${formatDate(o.createdAt)}</span>
+                        </div>
+
+                        <button class="btn-admin btn-deliver deliver-btn" data-id="${docSnap.id}">
+                            Mark as Delivered ✅
+                        </button>
+                    `;
+                    container.appendChild(card);
+                });
+
+                // Attach Click Events
+                document.querySelectorAll('.deliver-btn').forEach(btn => {
+                    btn.onclick = (e) => handleDelivery(e.target.dataset.id);
+                });
+
+            }, (error) => {
+                console.error("Order Load Error:", error);
+                container.innerHTML = `<p style="color:red; text-align:center;">Error loading orders. Check Rules/Index.</p>`;
+            });
+        }
+
+        // 2. Handle Delivery Action
+        async function handleDelivery(orderId) {
+            if (!confirm("Have you successfully delivered this pack in-game?")) return;
+
+            try {
+                const docRef = doc(db, "transactions", orderId);
+                await updateDoc(docRef, {
+                    status: 'approved', // Status changes to approved once delivered
+                    deliveredAt: serverTimestamp()
+                });
+                showToast("Order marked as Delivered!", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Delivery update failed.", "error");
+            }
+        }
+
+        // Start loading
+        loadOrders();
+    </script>
+</body>
+</html>

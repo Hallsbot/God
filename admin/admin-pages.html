@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Pages | RAOSTAR Admin</title>
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <style>
+        .editor-container {
+            background: var(--admin-card);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            background: #0f172a;
+            color: white;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            resize: vertical;
+            margin-top: 10px;
+        }
+        .help-box {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #93c5fd;
+            border-left: 4px solid var(--admin-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <h1>Legal Content Editor</h1>
+        <a href="admin-dashboard.html" class="btn btn-secondary">← Back</a>
+    </header>
+
+    <div class="container">
+        <!-- Page Selector -->
+        <div class="card">
+            <label style="display: block; margin-bottom: 10px; color: var(--text-dim);">Select Page to Manage:</label>
+            <select id="page-selector" style="width: 100%; padding: 12px; background: #0f172a; color: white; border: 1px solid var(--border); border-radius: 10px;">
+                <option value="" selected disabled>-- Choose Page --</option>
+                <option value="terms">Terms & Conditions</option>
+                <option value="privacy">Privacy Policy</option>
+            </select>
+        </div>
+
+        <!-- Editor Section -->
+        <div id="editor-section" class="editor-container" style="display: none;">
+            <h2 id="page-title-display" style="margin-bottom: 5px;">Edit Page</h2>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 20px;">Use HTML tags (h2, p, ul) for better formatting.</p>
+            
+            <form id="page-form">
+                <textarea id="page-content" placeholder="Type your content here..."></textarea>
+                
+                <div class="help-box">
+                    <strong>Tip:</strong> You can add headings with <code>&lt;h2&gt;Title&lt;/h2&gt;</code> and paragraphs with <code>&lt;p&gt;Text&lt;/p&gt;</code>.
+                </div>
+
+                <button type="submit" id="save-btn" class="btn-admin btn-edit" style="width: 100%; margin-top: 20px; height: 50px;">
+                    Save Page Content
+                </button>
+            </form>
+        </div>
+
+        <!-- Initializing Message (Hidden) -->
+        <div id="init-loader" style="display: none; text-align: center; margin-top: 50px;">
+            <div class="loader"></div>
+            <p>Setting up new page document...</p>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script type="module">
+        import { db } from '../js/firebase-config.js';
+        import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { showToast } from '../js/utils.js';
+
+        const selector = document.getElementById('page-selector');
+        const editor = document.getElementById('editor-section');
+        const textArea = document.getElementById('page-content');
+        const titleDisplay = document.getElementById('page-title-display');
+        const loader = document.getElementById('init-loader');
+        const saveBtn = document.getElementById('save-btn');
+
+        let currentPage = "";
+
+        // Handle Page Change
+        selector.onchange = async (e) => {
+            currentPage = e.target.value;
+            editor.style.display = 'none';
+            loader.style.display = 'block';
+
+            try {
+                const docRef = doc(db, "pages", currentPage);
+                const snap = await getDoc(docRef);
+
+                if (snap.exists()) {
+                    // Document Found
+                    textArea.value = snap.data().content || "";
+                } else {
+                    // Document Missing - Create Default
+                    console.warn("Document missing, creating default...");
+                    const defaultContent = `<h2>Welcome</h2><p>Please edit this ${currentPage} page content.</p>`;
+                    await setDoc(docRef, {
+                        title: currentPage === "terms" ? "Terms & Conditions" : "Privacy Policy",
+                        content: defaultContent,
+                        updatedAt: serverTimestamp()
+                    });
+                    textArea.value = defaultContent;
+                }
+
+                titleDisplay.innerText = "Editing: " + (currentPage === "terms" ? "Terms & Conditions" : "Privacy Policy");
+                loader.style.display = 'none';
+                editor.style.display = 'block';
+
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to load page: " + err.message, "error");
+                loader.style.display = 'none';
+            }
+        };
+
+        // Handle Save
+        document.getElementById('page-form').onsubmit = async (e) => {
+            e.preventDefault();
+            saveBtn.innerText = "Saving to Database...";
+            saveBtn.disabled = true;
+
+            try {
+                const docRef = doc(db, "pages", currentPage);
+                await setDoc(docRef, {
+                    content: textArea.value,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                showToast("Page updated successfully!", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Save failed", "error");
+            } finally {
+                saveBtn.innerText = "Save Page Content";
+                saveBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
